@@ -373,7 +373,7 @@ function AssinaturaBranding() {
               type="button"
               onClick={handleProceed}
               disabled={isReviewDisabled}
-              className="btn-primary"
+              className="btn btn-primary"
               style={{
                 opacity: isReviewDisabled ? 0.5 : 1,
                 cursor: isReviewDisabled ? 'not-allowed' : 'pointer',
@@ -422,7 +422,7 @@ function AssinaturaBranding() {
               <button
                 type="button"
                 onClick={() => setCurrentStep('upload')}
-                className="btn-primary"
+                className="btn btn-primary"
                 style={{ background: 'rgba(255,255,255,0.3)' }}
               >
                 VOLTAR
@@ -431,7 +431,7 @@ function AssinaturaBranding() {
                 type="button"
                 onClick={handleProceed}
                 disabled={!formData.agreePrivacy || !formData.agreeUnpublished}
-                className="btn-primary"
+                className="btn btn-primary"
                 style={{
                   opacity: !formData.agreePrivacy || !formData.agreeUnpublished ? 0.5 : 1,
                   cursor: !formData.agreePrivacy || !formData.agreeUnpublished ? 'not-allowed' : 'pointer',
@@ -484,7 +484,7 @@ function AssinaturaBranding() {
               <button
                 type="button"
                 onClick={() => setCurrentStep('review')}
-                className="btn-primary"
+                className="btn btn-primary"
                 style={{ background: 'rgba(255,255,255,0.3)' }}
               >
                 VOLTAR
@@ -493,7 +493,7 @@ function AssinaturaBranding() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSignDisabled}
-                className="btn-primary"
+                className="btn btn-primary"
                 style={{
                   opacity: isSignDisabled ? 0.5 : 1,
                   cursor: isSignDisabled ? 'not-allowed' : 'pointer',

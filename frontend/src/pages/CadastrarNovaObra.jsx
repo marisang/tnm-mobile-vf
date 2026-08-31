@@ -239,7 +239,7 @@ function CadastrarNovaObra() {
 
           {erro && <p style={{ color: '#ff6b6b', fontSize: '13px' }}>{erro}</p>}
 
-          <button type="submit" className="btn-primary" disabled={uploading}>
+          <button type="submit" className="btn btn-primary" disabled={uploading}>
             {uploading ? 'CADASTRANDO...' : 'CADASTRAR'}
           </button>
         </div>

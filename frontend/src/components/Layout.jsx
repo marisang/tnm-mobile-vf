@@ -104,7 +104,6 @@ function Layout({ children }) {
           <img src={logoTNM} alt="To Na Mídia" className="logo-img" />
         </div>
         <div className="header-icons">
-          <button className="header-icon-btn">🔔</button>
           <button className="header-icon-btn" onClick={handleLogout} aria-label="Sair" title="Sair">🚪</button>
         </div>
       </div>

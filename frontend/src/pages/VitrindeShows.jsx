@@ -43,12 +43,12 @@ function VitrindeShows() {
         className="banner-section"
         onClick={() => window.open(banner?.link_url || 'https://tonamidia.com.br', '_blank')}
       >
-        <button className="banner-button">{banner?.titulo || 'COMPRE NOSSOS PRODUTOS'}</button>
         {banner?.imagem_url ? (
           <img src={banner.imagem_url} alt={banner.titulo || 'Banner promocional'} className="banner-image" />
         ) : (
           <div className="product-placeholder">IMAGEM DO PRODUTO</div>
         )}
+         <button className="banner-button">{banner?.titulo || 'COMPRE NOSSOS PRODUTOS'}</button>
       </div>
 
       <h1 className="page-title">VITRINE DE SHOWS</h1>

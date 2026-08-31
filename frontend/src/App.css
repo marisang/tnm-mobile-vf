@@ -618,7 +618,7 @@ body {
 .banner-section {
   background: var(--primary-purple);
   border-radius: var(--border-radius);
-  padding: 40px 20px;
+  padding: 20px 20px;
   text-align: center;
   margin-bottom: 24px;
   cursor: pointer;
@@ -631,7 +631,7 @@ body {
 }
 
 .banner-button {
-  background: white;
+  background: #FFEB3B;
   color: var(--dark-purple);
   padding: 12px 24px;
   border: none;
@@ -642,11 +642,13 @@ body {
   text-transform: uppercase;
   font-size: 12px;
   letter-spacing: 0.5px;
-  margin-bottom: 16px;
+  margin-top: 30px;
+  margin-bottom: 4px;
 }
 
 .banner-button:hover {
   transform: scale(1.05);
+  font-weight: 600;
 }
 
 .banner-text {
@@ -676,7 +678,7 @@ body {
 
 .product-placeholder {
   width: 100%;
-  height: 200px;
+  height: 300px;
   background: rgba(255, 255, 255, 0.1);
   border: 2px dashed rgba(255, 235, 59, 0.3);
   border-radius: 8px;
@@ -689,7 +691,7 @@ body {
 
 .banner-image {
   width: 100%;
-  height: 200px;
+  height: auto;
   object-fit: cover;
   border-radius: 8px;
   display: block;
