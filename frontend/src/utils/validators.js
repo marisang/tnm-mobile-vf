@@ -44,3 +44,34 @@ export function formatCEP(rawCep) {
   const cep = onlyDigits(rawCep).slice(0, 8)
   return cep.replace(/(\d{5})(\d)/, '$1-$2')
 }
+
+export async function buscarEnderecoPorCEP(rawCep){
+  const cep = onlyDigits(rawCep)
+  if(cep.length !== 8) return null
+
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+    const data = await res.json()
+    if (data.erro) return null
+    return {
+      logradouro: data.logradouro || '',
+      bairro: data.bairro || '',
+      localidade: data.localidade || '',
+      uf: data.uf || '',
+    }
+  } catch{
+    return null
+  }
+}
+
+export function formatPhone(rawPhone) {
+  const phone = onlyDigits(rawPhone).slice(0, 11)
+  if (phone.length <= 10) {
+    return phone
+      .replace(/(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{4})(\d)/, '$1-$2')
+  }
+  return phone
+    .replace(/(\d{2})(\d)/, '($1) $2')
+    .replace(/(\d{5})(\d)/, '$1-$2')
+}

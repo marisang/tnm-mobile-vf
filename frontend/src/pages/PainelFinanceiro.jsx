@@ -246,10 +246,10 @@ function PainelFinanceiro() {
               Você será redirecionado(a) para a plataforma da <strong>ONErpm</strong>, onde o saque deverá ser realizado. O aplicativo da Tô na Mídia não processa solicitações de saque.
             </p>
             <div className="modal-actions">
-              <button className="btn-secondary btn-small" onClick={() => setMostrarModalSaque(false)}>
+              <button className="btn btn-primary btn-small" onClick={() => setMostrarModalSaque(false)}>
                 Cancelar
               </button>
-              <button className="btn-primary btn-small" onClick={handleConfirmarSaque}>
+              <button className="btn btn-primary btn-small" onClick={handleConfirmarSaque}>
                 Continuar
               </button>
             </div>
