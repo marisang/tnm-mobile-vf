@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import logoTNM from '../assets/Logo to na Midia ATUALIZADO.png'
 import supabase from '../lib/supabaseClient'
 import { artistasService } from '../services/api'
-import { isValidCPF, isValidEmail, formatCPF, formatCEP, formatPhone, buscarEnderecoPorCEP, onlyDigits } from '../utils/validators'
+import { isValidCPF, isValidEmail, formatCPF, formatCEP, onlyDigits } from '../utils/validators'
 import './Auth.css'
 
 const initialState = {
@@ -36,68 +36,6 @@ function Cadastro() {
   const [form, setForm] = useState(initialState)
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
-  // Controla o estado da busca de CEP separadamente do loading do formulário.
-  // "idle" = aguardando | "loading" = buscando na API | "found" = preenchido
-  // | "notfound" = CEP inexistente | "error" = falha de rede
-  const [cepStatus, setCepStatus] = useState('idle')
-
-  // Separado do handleChange para manter o handler principal síncrono.
-  // Chamado apenas quando o campo CEP atinge 8 dígitos ou fica incompleto.
-  async function handleCepChange(rawValue) {
-    const digitsOnly = onlyDigits(rawValue)
-
-    if (digitsOnly.length !== 8) {
-      // CEP incompleto: limpa os campos e reseta o status.
-      setCepStatus('idle')
-      setForm((prev) => ({
-        ...prev,
-        endereco:  '',
-        bairro:    '',
-        municipio: '',
-        uf:        '',
-      }))
-      return
-    }
-
-    // CEP completo: sinaliza que a busca começou e chama a API do ViaCEP.
-    setCepStatus('loading')
-    try {
-      const enderecoData = await buscarEnderecoPorCEP(digitsOnly)
-
-      if (!enderecoData) {
-        // API respondeu mas o CEP não existe na base do ViaCEP.
-        setCepStatus('notfound')
-        setForm((prev) => ({
-          ...prev,
-          endereco:  '',
-          bairro:    '',
-          municipio: '',
-          uf:        '',
-        }))
-        return
-      }
-
-      // CEP encontrado: preenche os campos automaticamente.
-      setCepStatus('found')
-      setForm((prev) => ({
-        ...prev,
-        endereco:  enderecoData.logradouro ?? '',
-        bairro:    enderecoData.bairro     ?? '',
-        municipio: enderecoData.localidade ?? '',
-        uf:        enderecoData.uf         ?? '',
-      }))
-    } catch {
-      // Falha de rede ou timeout — API indisponível no momento.
-      setCepStatus('error')
-      setForm((prev) => ({
-        ...prev,
-        endereco:  '',
-        bairro:    '',
-        municipio: '',
-        uf:        '',
-      }))
-    }
-  }
 
   function handleChange(e) {
     const { name, value, type, checked, files } = e.target
@@ -105,24 +43,17 @@ function Cadastro() {
     if (type === 'file') {
       parsedValue = files && files.length > 0 ? files[0] : null
     }
-    if (name === 'cpf')    parsedValue = formatCPF(value)
-    if (name === 'celular') parsedValue = formatPhone(value)
-    if (name === 'cep')    parsedValue = formatCEP(value)
-    if (name === 'uf')     parsedValue = value.toUpperCase().slice(0, 2)
-
+    if (name === 'cpf') parsedValue = formatCPF(value)
+    if (name === 'cep') parsedValue = formatCEP(value)
+    if (name === 'uf') parsedValue = value.toUpperCase().slice(0, 2)
     setForm((prev) => ({ ...prev, [name]: parsedValue }))
-
-    // Dispara a busca de endereço de forma assíncrona sem tornar este handler async.
-    if (name === 'cep') handleCepChange(value)
   }
 
   function validar() {
     if (form.nomeCompleto.trim().length < 3) return 'Informe o nome completo.'
     if (!isValidCPF(form.cpf)) return 'CPF inválido.'
     if (!isValidEmail(form.email)) return 'E-mail inválido.'
-    if (onlyDigits(form.celular).length < 10 || onlyDigits(form.celular).length > 11) {
-      return 'Informe um celular válido com DDD.'
-    }
+    if (onlyDigits(form.celular).length < 10) return 'Informe um celular válido com DDD.'
     if (form.senha.length < 8) return 'A senha deve ter pelo menos 8 caracteres.'
     if (!/[A-Za-z]/.test(form.senha) || !/[0-9]/.test(form.senha)) {
       return 'A senha deve conter letras e números.'
@@ -195,13 +126,7 @@ function Cadastro() {
           comprovanteResidenciaUrl = compPath
         }
       } catch (uploadErr) {
-        // O usuário já foi criado no auth mas os documentos falharam.
-        // Fazemos signOut para garantir que nenhuma sessão fique ativa.
-        // O usuário poderá tentar novamente — como o e-mail ainda não está
-        // confirmado/ativo na tabela de artistas, o suporte pode limpar o
-        // registro manualmente se necessário.
-        await supabase.auth.signOut()
-        setErro(uploadErr.message || 'Erro ao fazer upload dos documentos. Tente novamente.')
+        setErro(uploadErr.message || 'Erro ao fazer upload dos documentos.')
         return
       }
 
@@ -231,9 +156,6 @@ function Cadastro() {
           comprovante_residencia_url: comprovanteResidenciaUrl,
         })
       } catch (dbErr) {
-        // Mesmo com erro no DB, encerramos a sessão para não deixar o usuário
-        // logado com um cadastro incompleto.
-        await supabase.auth.signOut()
         setErro(
           dbErr?.message?.includes('duplicate') || dbErr?.code === '23505'
             ? 'CPF ou e-mail já cadastrado.'
@@ -384,44 +306,10 @@ function Cadastro() {
             value={form.endereco}
             onChange={handleChange}
             className="auth-input"
-            disabled={cepStatus === 'loading'}
-            style={cepStatus === 'loading' ? { opacity: 0.5 } : undefined}
           />
 
           <div className="auth-row">
-            <div style={{ position: 'relative', flex: 1 }}>
-              <input
-                type="text"
-                name="cep"
-                placeholder="CEP"
-                value={form.cep}
-                onChange={handleChange}
-                maxLength={9}
-                className="auth-input"
-                style={{ width: '100%' }}
-              />
-              {/* Feedback inline do status da busca do ViaCEP */}
-              {cepStatus === 'loading' && (
-                <p style={{ fontSize: '0.8rem', color: '#888', marginTop: 4 }}>
-                  🔍 Buscando endereço...
-                </p>
-              )}
-              {cepStatus === 'found' && (
-                <p style={{ fontSize: '0.8rem', color: '#2a7a2a', marginTop: 4 }}>
-                  ✓ Endereço preenchido automaticamente.
-                </p>
-              )}
-              {cepStatus === 'notfound' && (
-                <p style={{ fontSize: '0.8rem', color: '#b94a00', marginTop: 4 }}>
-                  CEP não encontrado. Preencha o endereço manualmente.
-                </p>
-              )}
-              {cepStatus === 'error' && (
-                <p style={{ fontSize: '0.8rem', color: '#b94a00', marginTop: 4 }}>
-                  Não foi possível consultar o CEP. Preencha o endereço manualmente.
-                </p>
-              )}
-            </div>
+            <input type="text" name="cep" placeholder="CEP" value={form.cep} onChange={handleChange} maxLength={9} className="auth-input" />
             <input
               type="text"
               name="bairro"
@@ -429,8 +317,6 @@ function Cadastro() {
               value={form.bairro}
               onChange={handleChange}
               className="auth-input"
-              disabled={cepStatus === 'loading'}
-              style={cepStatus === 'loading' ? { opacity: 0.5 } : undefined}
             />
           </div>
 
@@ -442,8 +328,6 @@ function Cadastro() {
               value={form.municipio}
               onChange={handleChange}
               className="auth-input"
-              disabled={cepStatus === 'loading'}
-              style={cepStatus === 'loading' ? { opacity: 0.5 } : undefined}
             />
             <input
               type="text"
@@ -453,8 +337,7 @@ function Cadastro() {
               onChange={handleChange}
               maxLength={2}
               className="auth-input"
-              style={{ maxWidth: 90, ...(cepStatus === 'loading' ? { opacity: 0.5 } : {}) }}
-              disabled={cepStatus === 'loading'}
+              style={{ maxWidth: 90 }}
             />
           </div>
 
