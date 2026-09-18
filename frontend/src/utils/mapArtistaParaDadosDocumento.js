@@ -1,4 +1,16 @@
 
+/** Junta rua, número e complemento num único endereço legível para os contratos. */
+function montarEnderecoCompleto(linha) {
+  let endereco = linha.endereco_completo ?? ''
+  if (linha.numero) {
+    endereco = endereco ? `${endereco}, ${linha.numero}` : linha.numero
+  }
+  if (linha.complemento) {
+    endereco = endereco ? `${endereco} - ${linha.complemento}` : linha.complemento
+  }
+  return endereco
+}
+
 export function mapArtistaParaDadosDocumento(linha) {
   return {
     nomeCompleto: linha.nome_completo ?? '',
@@ -9,7 +21,7 @@ export function mapArtistaParaDadosDocumento(linha) {
     rg: linha.rg ?? '',
     orgaoEmissor: linha.orgao_emissor ?? '',
     cpf: linha.cpf ?? '',
-    endereco: linha.endereco_completo ?? '',
+    endereco: montarEnderecoCompleto(linha),
     bairro: linha.bairro ?? '',
     municipio: linha.municipio ?? '',
     uf: linha.uf ?? '',

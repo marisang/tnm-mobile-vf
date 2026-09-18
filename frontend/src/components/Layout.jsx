@@ -9,6 +9,7 @@ function Layout({ children }) {
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [userName, setUserName] = useState('Artista')
+  const [confirmarSaidaAberto, setConfirmarSaidaAberto] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -38,7 +39,13 @@ function Layout({ children }) {
     setMenuOpen(false)
   }
 
-  async function handleLogout() {
+  function handleLogout() {
+    setMenuOpen(false)
+    setConfirmarSaidaAberto(true)
+  }
+
+  async function confirmarSaida() {
+    setConfirmarSaidaAberto(false)
     await supabase.auth.signOut()
     navigate('/login', { replace: true })
   }
@@ -126,8 +133,25 @@ function Layout({ children }) {
         </button>
         <button className="nav-item" onClick={() => navigateTo('/shows')}>🔍</button>
         <button className="nav-item" onClick={() => navigateTo('/meus-lancamentos')}>💬</button>
-        <button className="nav-item" onClick={handleLogout}>👤</button>
       </div>
+
+      {/* Confirmação de logout */}
+      {confirmarSaidaAberto && (
+        <div className="modal-overlay" onClick={() => setConfirmarSaidaAberto(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Sair da conta</h3>
+            <p>Tem certeza que deseja sair da sua conta?</p>
+            <div className="modal-actions">
+              <button className="btn btn-secondary btn-medium" onClick={() => setConfirmarSaidaAberto(false)}>
+                Cancelar
+              </button>
+              <button className="btn btn-secondary btn-medium" onClick={confirmarSaida}>
+                Sair
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

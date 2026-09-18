@@ -1,15 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import logoTNM from '../assets/Logo to na Midia ATUALIZADO.png'
 import supabase from '../lib/supabaseClient'
 import { artistasService } from '../services/api'
-import { isValidCPF, isValidEmail, formatCPF, formatCEP, onlyDigits } from '../utils/validators'
+import { isValidCPF, isValidEmail, formatCPF, formatCEP, formatRG, formatPhone, onlyDigits } from '../utils/validators'
+import { nacionalidades, bandeiraUrl } from '../utils/nacionalidades'
+import PoliticaPrivacidadeConteudo from './PoliticaPrivacidadeConteudo'
 import './Auth.css'
 
 const initialState = {
   nomeCompleto: '',
   pseudonimoArtistico: '',
   nacionalidade: '',
+  nacionalidadeOutro: '',
   estadoCivil: '',
   profissao: '',
   estiloMusical: '',
@@ -19,6 +22,8 @@ const initialState = {
   cpf: '',
   dataNascimento: '',
   endereco: '',
+  numero: '',
+  complemento: '',
   cep: '',
   bairro: '',
   municipio: '',
@@ -36,6 +41,26 @@ function Cadastro() {
   const [form, setForm] = useState(initialState)
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
+  const [buscandoCep, setBuscandoCep] = useState(false)
+  const [politicaAberta, setPoliticaAberta] = useState(false)
+  const [dataFocada, setDataFocada] = useState(false)
+  const [nacionalidadeAberta, setNacionalidadeAberta] = useState(false)
+  const nacionalidadeRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickFora(e) {
+      if (nacionalidadeRef.current && !nacionalidadeRef.current.contains(e.target)) {
+        setNacionalidadeAberta(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickFora)
+    return () => document.removeEventListener('mousedown', handleClickFora)
+  }, [])
+
+  function selecionarNacionalidade(value) {
+    setForm((prev) => ({ ...prev, nacionalidade: value }))
+    setNacionalidadeAberta(false)
+  }
 
   function handleChange(e) {
     const { name, value, type, checked, files } = e.target
@@ -45,8 +70,35 @@ function Cadastro() {
     }
     if (name === 'cpf') parsedValue = formatCPF(value)
     if (name === 'cep') parsedValue = formatCEP(value)
+    if (name === 'rg') parsedValue = formatRG(value)
+    if (name === 'celular') parsedValue = formatPhone(value)
     if (name === 'uf') parsedValue = value.toUpperCase().slice(0, 2)
     setForm((prev) => ({ ...prev, [name]: parsedValue }))
+
+    if (name === 'cep' && onlyDigits(parsedValue).length === 8) {
+      buscarEnderecoPorCep(onlyDigits(parsedValue))
+    }
+  }
+
+  /** Preenche endereço, bairro, município e UF a partir do CEP (ViaCEP). */
+  async function buscarEnderecoPorCep(cep) {
+    setBuscandoCep(true)
+    try {
+      const resposta = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      const dados = await resposta.json()
+      if (dados.erro) return
+      setForm((prev) => ({
+        ...prev,
+        endereco: dados.logradouro || prev.endereco,
+        bairro: dados.bairro || prev.bairro,
+        municipio: dados.localidade || prev.municipio,
+        uf: dados.uf || prev.uf,
+      }))
+    } catch {
+      // Falha na busca (rede, CEP inexistente etc.): o usuário preenche manualmente.
+    } finally {
+      setBuscandoCep(false)
+    }
   }
 
   function validar() {
@@ -97,7 +149,9 @@ function Cadastro() {
         return
       }
 
-      // Upload dos documentos
+      // Upload dos documentos: a política de segurança do bucket exige que
+      // a pasta do arquivo seja igual ao id do usuário já autenticado
+      // (auth.uid()), por isso só dá pra fazer isso depois do signUp acima.
       let documentoIdentificacaoUrl = null
       let comprovanteResidenciaUrl = null
 
@@ -135,7 +189,9 @@ function Cadastro() {
           auth_user_id: authData.user.id,
           nome_completo: form.nomeCompleto.trim(),
           pseudonimo_artistico: form.pseudonimoArtistico.trim() || null,
-          nacionalidade: form.nacionalidade.trim() || null,
+          nacionalidade: form.nacionalidade === 'Outro'
+            ? form.nacionalidadeOutro.trim() || null
+            : form.nacionalidade.trim() || null,
           estado_civil: form.estadoCivil || null,
           profissao: form.profissao.trim() || null,
           estilo_musical: form.estiloMusical === 'Outro' 
@@ -146,6 +202,8 @@ function Cadastro() {
           cpf: onlyDigits(form.cpf),
           data_nascimento: form.dataNascimento || null,
           endereco_completo: form.endereco.trim() || null,
+          numero: form.numero.trim() || null,
+          complemento: form.complemento.trim() || null,
           cep: onlyDigits(form.cep) || null,
           bairro: form.bairro.trim() || null,
           municipio: form.municipio.trim() || null,
@@ -239,14 +297,67 @@ function Cadastro() {
             />
           )}
 
-          <input
-            type="text"
-            name="nacionalidade"
-            placeholder="Nacionalidade"
-            value={form.nacionalidade}
-            onChange={handleChange}
-            className="auth-input"
-          />
+          <div className="nationality-select" ref={nacionalidadeRef}>
+            <button
+              type="button"
+              className="auth-input nationality-trigger"
+              onClick={() => setNacionalidadeAberta((aberta) => !aberta)}
+            >
+              {form.nacionalidade ? (
+                <span className="nationality-trigger-value">
+                  {form.nacionalidade !== 'Outro' && (
+                    <img
+                      src={bandeiraUrl(nacionalidades.find((n) => n.value === form.nacionalidade)?.code)}
+                      alt=""
+                      className="nationality-flag"
+                    />
+                  )}
+                  {form.nacionalidade}
+                </span>
+              ) : (
+                <span className="nationality-placeholder">Selecione a Nacionalidade</span>
+              )}
+              <span className="nationality-arrow">▾</span>
+            </button>
+
+            {nacionalidadeAberta && (
+              <ul className="nationality-dropdown">
+                {nacionalidades.map((n) => (
+                  <li key={n.value}>
+                    <button
+                      type="button"
+                      className="nationality-option"
+                      onClick={() => selecionarNacionalidade(n.value)}
+                    >
+                      <img src={bandeiraUrl(n.code)} alt="" className="nationality-flag" />
+                      {n.value}
+                    </button>
+                  </li>
+                ))}
+                <li>
+                  <button
+                    type="button"
+                    className="nationality-option"
+                    onClick={() => selecionarNacionalidade('Outro')}
+                  >
+                    Outro
+                  </button>
+                </li>
+              </ul>
+            )}
+          </div>
+
+          {form.nacionalidade === 'Outro' && (
+            <input
+              type="text"
+              name="nacionalidadeOutro"
+              placeholder="Digite sua nacionalidade"
+              value={form.nacionalidadeOutro || ''}
+              onChange={handleChange}
+              className="auth-input"
+              style={{ marginTop: 8 }}
+            />
+          )}
 
           <select name="estadoCivil" value={form.estadoCivil} onChange={handleChange} className="auth-select">
             <option value="" disabled>
@@ -269,7 +380,15 @@ function Cadastro() {
           />
 
           <div className="auth-row">
-            <input type="text" name="rg" placeholder="RG" value={form.rg} onChange={handleChange} className="auth-input" />
+            <input
+              type="text"
+              name="rg"
+              placeholder="RG"
+              value={form.rg}
+              onChange={handleChange}
+              maxLength={12}
+              className="auth-input"
+            />
             <input
               type="text"
               name="orgaoEmissor"
@@ -292,10 +411,13 @@ function Cadastro() {
           />
 
           <input
-            type="date"
+            type={form.dataNascimento || dataFocada ? 'date' : 'text'}
             name="dataNascimento"
+            placeholder="Data de Nascimento"
             value={form.dataNascimento}
             onChange={handleChange}
+            onFocus={() => setDataFocada(true)}
+            onBlur={() => setDataFocada(false)}
             className="auth-input"
           />
 
@@ -309,7 +431,35 @@ function Cadastro() {
           />
 
           <div className="auth-row">
-            <input type="text" name="cep" placeholder="CEP" value={form.cep} onChange={handleChange} maxLength={9} className="auth-input" />
+            <input
+              type="text"
+              name="numero"
+              placeholder="Número"
+              value={form.numero}
+              onChange={handleChange}
+              className="auth-input"
+              style={{ maxWidth: 120 }}
+            />
+            <input
+              type="text"
+              name="complemento"
+              placeholder="Complemento (opcional)"
+              value={form.complemento}
+              onChange={handleChange}
+              className="auth-input"
+            />
+          </div>
+
+          <div className="auth-row">
+            <input
+              type="text"
+              name="cep"
+              placeholder="CEP"
+              value={form.cep}
+              onChange={handleChange}
+              maxLength={9}
+              className="auth-input"
+            />
             <input
               type="text"
               name="bairro"
@@ -319,6 +469,9 @@ function Cadastro() {
               className="auth-input"
             />
           </div>
+          {buscandoCep && (
+            <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: 0 }}>Buscando endereço...</p>
+          )}
 
           <div className="auth-row">
             <input
@@ -357,6 +510,7 @@ function Cadastro() {
             placeholder="Celular / Whatsapp"
             value={form.celular}
             onChange={handleChange}
+            maxLength={15}
             className="auth-input"
             required
           />
@@ -415,7 +569,14 @@ function Cadastro() {
           <div className="auth-checkbox-group">
             <label className="auth-checkbox-label">
               <input type="checkbox" name="aceitaPolitica" checked={form.aceitaPolitica} onChange={handleChange} required />
-              Li e concordo com a <Link to="/politica-de-privacidade">Política de Privacidade</Link>
+              Li e concordo com a{' '}
+              <button
+                type="button"
+                className="auth-inline-link"
+                onClick={() => setPoliticaAberta(true)}
+              >
+                Política de Privacidade
+              </button>
             </label>
           </div>
 
@@ -430,6 +591,24 @@ function Cadastro() {
       <div className="auth-footer">
         Já possui uma conta? <Link to="/login">Faça login</Link>
       </div>
+
+      {politicaAberta && (
+        <div className="auth-modal-overlay" onClick={() => setPoliticaAberta(false)}>
+          <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="auth-modal-close"
+              onClick={() => setPoliticaAberta(false)}
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+            <div className="auth-modal-content">
+              <PoliticaPrivacidadeConteudo />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

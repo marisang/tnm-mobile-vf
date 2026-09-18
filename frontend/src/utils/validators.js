@@ -44,3 +44,24 @@ export function formatCEP(rawCep) {
   const cep = onlyDigits(rawCep).slice(0, 8)
   return cep.replace(/(\d{5})(\d)/, '$1-$2')
 }
+
+/** Formata RG no padrão XX.XXX.XXX-X, progressivamente durante a digitação. */
+export function formatRG(rawRG) {
+  const rg = onlyDigits(rawRG).slice(0, 9)
+  return rg
+    .replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1})$/, '$1-$2')
+}
+
+/**
+ * Formata celular/telefone no padrão (XX) XXXXX-XXXX (celular, 11
+ * dígitos) ou (XX) XXXX-XXXX (fixo, 10 dígitos), progressivamente
+ * durante a digitação.
+ */
+export function formatPhone(rawPhone) {
+  const phone = onlyDigits(rawPhone).slice(0, 11)
+  return phone
+    .replace(/(\d{2})(\d)/, '($1) $2')
+    .replace(/(\d{4,5})(\d{4})$/, '$1-$2')
+}

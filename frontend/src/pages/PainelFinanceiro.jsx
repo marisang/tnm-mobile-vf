@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { calcularSplitFinanceiro } from '../utils/calcularSplitFinanceiro'
 import { transacoesService } from '../services/api'
 import { useArtistaAtual } from '../hooks/useArtistaAtual'
 
@@ -9,8 +8,6 @@ function PainelFinanceiro() {
   const [erro, setErro] = useState(null)
   const [mesAtual, setMesAtual] = useState(0) // 0 = mês atual, 1 = mês anterior, 2 = 2 meses atrás
   const [dadosFinanceiros, setDadosFinanceiros] = useState({
-    valorBrutoTotal: 0,
-    temVinculoEditorial: false,
     atualizadoEm: '',
     historico: [], // Últimos 3 meses
   })
@@ -49,7 +46,10 @@ function PainelFinanceiro() {
             return dataComp.getMonth() + 1 === mes && dataComp.getFullYear() === ano
           })
 
-          // Somar valores brutos do mês
+          // Soma o valor já pronto para o artista, exatamente como veio da
+          // planilha importada pelo painel administrativo — não há mais
+          // nenhum split calculado aqui: o valor da planilha já é o valor
+          // que deve aparecer no app do artista.
           const totalMes = transacoesMes.reduce((acc, t) => acc + Number(t.valor_bruto || 0), 0)
 
           ultimos3Meses.push({
@@ -57,13 +57,10 @@ function PainelFinanceiro() {
             ano,
             mesNome: data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
             mesAbrev: data.toLocaleDateString('pt-BR', { month: 'short' }),
-            valorBruto: totalMes,
+            valor: totalMes,
             transacoes: transacoesMes,
           })
         }
-
-        // Verificar se o artista tem vínculo editorial (campo na tabela artistas)
-        const temVinculoEditorial = artista.vinculo_editorial || false
 
         // "Atualizado em" deve refletir quando os dados do ERP foram
         // importados/atualizados pelo WEB, não o horário em que a pessoa
@@ -79,8 +76,6 @@ function PainelFinanceiro() {
           timestampsAtualizacao.length > 0 ? new Date(Math.max(...timestampsAtualizacao)) : new Date()
 
         setDadosFinanceiros({
-          valorBrutoTotal: ultimos3Meses[0]?.valorBruto || 0,
-          temVinculoEditorial,
           atualizadoEm: ultimaAtualizacao.toLocaleString('pt-BR'),
           historico: ultimos3Meses,
         })
@@ -95,25 +90,15 @@ function PainelFinanceiro() {
     carregarDadosFinanceiros()
   }, [artista])
 
- 
   // Dados do mês selecionado
   const dadosMesAtual = dadosFinanceiros.historico[mesAtual] || {
-    valorBruto: 0,
+    valor: 0,
     mesNome: '',
   }
 
-  const split = calcularSplitFinanceiro(
-    dadosMesAtual.valorBruto,
-    dadosFinanceiros.temVinculoEditorial
-  )
-
-  const saldoFormatado = split.artista.toLocaleString('pt-BR', {
+  const saldoFormatado = dadosMesAtual.valor.toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-  })
-
-  const percentualArtistaFormatado = split.percentualArtista.toLocaleString('pt-BR', {
-    maximumFractionDigits: 1,
   })
 
   function handleConfirmarSaque() {
@@ -159,57 +144,10 @@ function PainelFinanceiro() {
 
       {/* Saldo Disponível */}
       <div className="balance-card">
-        <div className="balance-label">Faturamento do Período (ERP)</div>
+        <div className="balance-label">Saldo do Período (ERP)</div>
         <div className="balance-amount">{saldoFormatado}</div>
-        <div className="balance-percentual">
-          {percentualArtistaFormatado}% do faturamento bruto
-          {dadosFinanceiros.temVinculoEditorial && ' (após repasse à editora)'}
-        </div>
         <div className="balance-updated">
           Dados atualizados em: {dadosFinanceiros.atualizadoEm}
-        </div>
-      </div>
-
-      {/* Resumo do Split Financeiro */}
-      <div className="chart-card" style={{ marginTop: 16 }}>
-        <div className="chart-title">Distribuição Financeira (Dados ERP)</div>
-        <div style={{ padding: '16px 0' }}>
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Valor Bruto Total</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#333' }}>
-              {dadosMesAtual.valorBruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>ONErpm (30%)</div>
-            <div style={{ fontSize: '1rem', fontWeight: 500, color: '#555' }}>
-              {split.onerpm.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Tô Na Mídia (20%)</div>
-            <div style={{ fontSize: '1rem', fontWeight: 500, color: '#555' }}>
-              {split.tnm.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </div>
-          </div>
-
-          {dadosFinanceiros.temVinculoEditorial && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Editora (25% da parte do artista)</div>
-              <div style={{ fontSize: '1rem', fontWeight: 500, color: '#555' }}>
-                {split.editora?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </div>
-            </div>
-          )}
-
-          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '2px solid #6A1B9A' }}>
-            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Você Recebe ({split.percentualArtista}%)</div>
-            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#6A1B9A' }}>
-              {split.artista.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -246,10 +184,10 @@ function PainelFinanceiro() {
               Você será redirecionado(a) para a plataforma da <strong>ONErpm</strong>, onde o saque deverá ser realizado. O aplicativo da Tô na Mídia não processa solicitações de saque.
             </p>
             <div className="modal-actions">
-              <button className="btn-secondary btn-small" onClick={() => setMostrarModalSaque(false)}>
+              <button className="btn btn-secondary btn-medium" onClick={() => setMostrarModalSaque(false)}>
                 Cancelar
               </button>
-              <button className="btn-primary btn-small" onClick={handleConfirmarSaque}>
+              <button className="btn btn-secondary btn-medium" onClick={handleConfirmarSaque}>
                 Continuar
               </button>
             </div>
