@@ -104,7 +104,10 @@ function TwoFactorAuth() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { shouldCreateUser: false },
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: window.location.origin,
+        },
       })
       if (error) {
         setErro('Não foi possível reenviar o código. Tente novamente em instantes.')

@@ -34,7 +34,10 @@ function Login() {
 
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email,
-        options: { shouldCreateUser: false },
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: window.location.origin,
+        },
       })
 
       if (otpError) {
