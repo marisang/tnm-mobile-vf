@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tô na Mídia</string>
+    <string name="title_activity_main">Tô na Mídia</string>
+    <string name="package_name">com.tonamidiadigital.tonamidia</string>
+    <string name="custom_url_scheme">com.tonamidiadigital.tonamidia</string>
+</resources>
