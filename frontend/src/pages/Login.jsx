@@ -17,7 +17,7 @@ function Login() {
     setLoading(true)
 
     try {
-      // 1º fator: e-mail + senha.
+      // 1º fator: valida e-mail + senha
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password: senha,
@@ -28,15 +28,14 @@ function Login() {
         return
       }
 
-      // A senha autentica, mas a sessão só é confirmada após o código
-      // enviado por e-mail (2º fator).
+      // Encerra a sessão temporária — ela só será confirmada após o código OTP
       await supabase.auth.signOut()
 
+      // 2º fator: envia o código de 6 dígitos para o e-mail
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email,
         options: {
           shouldCreateUser: false,
-          emailRedirectTo: window.location.origin,
         },
       })
 

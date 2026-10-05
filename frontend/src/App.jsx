@@ -25,9 +25,12 @@ function App() {
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
         <Route path="/nova-senha" element={<NovaSenha />} />
-        <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+        <Route
+          path="/politica-de-privacidade"
+          element={<PoliticaPrivacidade />}
+        />
 
-        {/* Rotas protegidas — exigem sessão autenticada (login + 2FA) */}
+        {/* Rotas protegidas */}
         <Route
           path="/"
           element={
@@ -38,6 +41,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/PainelFinanceiro"
           element={
@@ -48,6 +52,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/cadastrar-obra"
           element={
@@ -58,6 +63,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/meus-lancamentos"
           element={
@@ -68,6 +74,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/cadastrar-show"
           element={
@@ -78,6 +85,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/shows"
           element={
@@ -88,6 +96,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/assinatura"
           element={
